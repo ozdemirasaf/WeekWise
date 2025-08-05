@@ -1,8 +1,20 @@
 import React from "react";
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { Text, View, TouchableOpacity } from "react-native";
 import Feather from 'react-native-vector-icons/Feather';
+import styles from "./styles";
+import { TodoItem } from "../../Redux/Todo/TodoSlice";
 
-export default function DutyCard({ task, isActive, onPress, onDelete, onEdit }) {
+interface DutyCard {
+    task: TodoItem,
+    isActive: boolean,
+    onPress: () => void,
+    onDelete: () => void
+}
+
+export default function DutyCard({ task, isActive, onPress, onDelete }: DutyCard) {
+
+
+
     return (
         <TouchableOpacity
             onPress={onPress}
@@ -30,13 +42,13 @@ export default function DutyCard({ task, isActive, onPress, onDelete, onEdit }) 
                         <Feather name='check-square' size={24} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={onEdit}>
+                    <TouchableOpacity>
                         <Feather name='edit' size={24} />
                     </TouchableOpacity>
 
 
-                    <TouchableOpacity onPress={onDelete}>
-                        <Feather name='trash' size={24} />
+                    <TouchableOpacity>
+                        <Feather name='trash' onPress={onDelete} size={24} />
                     </TouchableOpacity>
 
                 </View>
@@ -45,33 +57,4 @@ export default function DutyCard({ task, isActive, onPress, onDelete, onEdit }) 
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        backgroundColor: "#efeefc",
-        padding: 15,
-        borderRadius: 16,
-        marginBottom: 10,
-        position: "relative",
-    },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 15,
-    },
-    headerTime: {
-        flexDirection: "row",
-        gap: 15,
-    },
-    content: {},
-    actions: {
-        flexDirection: "row",
-        justifyContent : 'flex-end',
-        gap : 15,
-        marginTop : 10
 
-    },
-    actionBtn: {
-        fontSize: 24,
-        paddingHorizontal: 10,
-    },
-});

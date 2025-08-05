@@ -6,97 +6,89 @@ import {
     View,
     TouchableOpacity,
     TouchableWithoutFeedback,
+    GestureResponderEvent,
 } from "react-native";
 
 import styles from "./styles";
 
-import DateTimePicker from "@react-native-community/datetimepicker";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
+import { useDispatch } from "react-redux";
+import { TodoAdd } from "../../Redux/Todo/TodoSlice";
 
-export default function AddModal({ modalVisible, setModalVisible, dayKey, onSave }) {
-    const [task, setTask] = useState("");
-    const [startTime, setStartTime] = useState(null);
-    const [endTime, setEndTime] = useState(null);
-    const [showPicker, setShowPicker] = useState(false);
-    const [selectingStartTime, setSelectingStartTime] = useState(true);
-    const [description, setDescription] = useState("");
+interface AddModalProps {
+    modalVisible: boolean;
+    setModalVisible: (visible: boolean) => void;
+    dayKey: string;
+}
 
-    const handleTimeSelect = (event, selectedDate) => {
-        if (event.type === "dismissed") {
-            // Eğer başlangıç zamanı seçiliyorsa, sadece onu sıfırla
+export default function AddModal({
+    modalVisible,
+    setModalVisible,
+    dayKey,
+}: AddModalProps) {
+    const [task, setTask] = useState<string>("");
+    const [startTime, setStartTime] = useState<Date | null>(null);
+    const [endTime, setEndTime] = useState<Date | null>(null);
+    const [showPicker, setShowPicker] = useState<boolean>(false);
+    const [selectingStartTime, setSelectingStartTime] = useState<boolean>(true);
+    const [description, setDescription] = useState<string>("");
+
+    const dispatch = useDispatch();
+
+    const handleTimeSelect = (event: DateTimePickerEvent, selectedDate?: Date | undefined) => {
+        if (event.type === 'dismissed') {
             if (selectingStartTime) {
                 setStartTime(null);
             } else {
                 setEndTime(null);
             }
-
             setShowPicker(false);
-            setSelectingStartTime(true); // bir sonraki açılışta yine başlangıçtan başlasın
+            setSelectingStartTime(true);
             return;
         }
 
-        // Zaman seçildiyse devam et
         if (selectedDate) {
             if (selectingStartTime) {
                 setStartTime(selectedDate);
-                setSelectingStartTime(false); // şimdi bitiş zamanı seçilecek
-                setShowPicker(true); // picker açık kalmaya devam etsin
+                setSelectingStartTime(false);
+                setShowPicker(true);
             } else {
                 setEndTime(selectedDate);
-                setShowPicker(false); // ikisi de seçildi, picker kapanır
-                setSelectingStartTime(true); // tekrar başlangıçtan başlasın
+                setShowPicker(false);
+                setSelectingStartTime(true);
             }
         }
     };
 
-    const formattedTime = (date) =>
+
+    const formattedTime = (date: Date | null): string =>
         date ? date.toLocaleTimeString().slice(0, 5) : "-- : --";
 
-
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!task.trim() || !startTime || !endTime || !description.trim()) {
             alert("Lütfen tüm alanları eksiksiz doldurunuz.");
             return;
         }
 
-        const newTask = {
-            id: Math.random().toString(36).substring(2, 10), // 🔑 eşsiz id
-            title: task,
-            startTime: formattedTime(startTime),
-            endTime: formattedTime(endTime),
-            description: description,
-        };
+        dispatch(
+            TodoAdd({
+                id: Math.random().toString(36).substring(2, 10),
+                dayKey: dayKey,
+                title: task,
+                startTime: formattedTime(startTime),
+                endTime: formattedTime(endTime),
+                description: description,
+            })
+        );
 
-        try {
-            const existingData = await AsyncStorage.getItem(dayKey); // 🔥 dayKey kullandık
-            const tasks = existingData ? JSON.parse(existingData) : [];
-            const updatedTasks = [...tasks, newTask];
-
-            await AsyncStorage.setItem(dayKey, JSON.stringify(updatedTasks)); // 🔥
-
-            console.log("Yeni görev kaydedildi:", newTask);
-
-            // Optional: state'i güncellemek için parent'a bildir
-            if (onSave) {
-                await onSave(newTask); // optional parametre
-            }
-
-            // Temizleme
-            setModalVisible(false);
-            setTask("");
-            setStartTime(null);
-            setEndTime(null);
-            setDescription("");
-        } catch (error) {
-            console.error("Görev kaydederken hata:", error);
-        }
+        // Alanları temizle
+        setTask("");
+        setStartTime(null);
+        setEndTime(null);
+        setDescription("");
+        setModalVisible(false);
     };
-
-
-
-
-
 
     return (
         <Modal
@@ -108,7 +100,6 @@ export default function AddModal({ modalVisible, setModalVisible, dayKey, onSave
             <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-
                         <TextInput
                             style={styles.input}
                             placeholder="Görev Başlığı Giriniz"
@@ -117,16 +108,12 @@ export default function AddModal({ modalVisible, setModalVisible, dayKey, onSave
                             maxLength={20}
                         />
 
-
                         <TouchableOpacity
-                            onPress={() => {
-                                setShowPicker(true);
-                                //setSelectingStartTime(true);
-                            }}
+                            onPress={() => setShowPicker(true)}
                             style={styles.input}
                         >
                             <Text style={{ fontSize: 16 }}>
-                                Görev Zaman   {formattedTime(startTime)}     {formattedTime(endTime)}
+                                Görev Zaman {formattedTime(startTime)} {formattedTime(endTime)}
                             </Text>
                         </TouchableOpacity>
 
@@ -150,29 +137,25 @@ export default function AddModal({ modalVisible, setModalVisible, dayKey, onSave
                             textAlignVertical="top"
                         />
 
-
-
-
                         <View style={styles.buttonContainer}>
-
-                            <TouchableOpacity style={styles.buttonClose} onPress={() => setModalVisible(false)}>
+                            <TouchableOpacity
+                                style={styles.buttonClose}
+                                onPress={() => setModalVisible(false)}
+                            >
                                 <Text style={styles.buttonText}>Kapat</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.buttonSave} onPress={handleSave}>
                                 <Text style={styles.buttonText}>Kaydet</Text>
                             </TouchableOpacity>
-
-
-
-
                         </View>
-
                     </View>
                 </View>
             </TouchableWithoutFeedback>
         </Modal>
     );
 }
-
+function alert(arg0: string) {
+    throw new Error("Function not implemented.");
+}
 

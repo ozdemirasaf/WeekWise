@@ -6,7 +6,6 @@ export default StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    backdropFilter: 'blur(10px)',
   },
   modalContent: {
     width: 350,

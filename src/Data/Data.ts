@@ -1,4 +1,4 @@
- const weeks = [
+const weeks = [
   {
     id: 1,
     title: 'Pazartesi',
