@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Modal,
     Text,
@@ -6,7 +6,7 @@ import {
     View,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    GestureResponderEvent,
+    Alert,
 } from "react-native";
 
 import styles from "./styles";
@@ -14,20 +14,39 @@ import styles from "./styles";
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 import { useDispatch } from "react-redux";
-import { TodoAdd } from "../../Redux/Todo/TodoSlice";
+import { TodoUpdate } from "../../Redux/Todo/TodoSlice";
 
-interface AddModalProps {
+import { TodoItem } from "../../Redux/Todo/TodoSlice";
+
+interface EditModalProps {
     modalVisible: boolean;
     setModalVisible: (visible: boolean) => void;
     dayKey: string;
+    task: TodoItem | null;
 }
 
-export default function AddModal({
+const parseTime = (timeStr: string): Date | null => {
+    if (!timeStr || timeStr === "-- : --") return null;
+    const [hour, minute] = timeStr.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hour, minute, 0, 0);
+    return date;
+};
+
+const formatTime = (date: Date | null): string => {
+    if (!date) return "-- : --";
+    const h = date.getHours().toString().padStart(2, "0");
+    const m = date.getMinutes().toString().padStart(2, "0");
+    return `${h}:${m}`;
+};
+
+export default function EditModal({
     modalVisible,
     setModalVisible,
     dayKey,
-}: AddModalProps) {
-    const [task, setTask] = useState<string>("");
+    task,
+}: EditModalProps) {
+    const [title, setTitle] = useState<string>("");
     const [startTime, setStartTime] = useState<Date | null>(null);
     const [endTime, setEndTime] = useState<Date | null>(null);
     const [showPicker, setShowPicker] = useState<boolean>(false);
@@ -36,13 +55,40 @@ export default function AddModal({
 
     const dispatch = useDispatch();
 
-    const handleTimeSelect = (event: DateTimePickerEvent, selectedDate?: Date | undefined) => {
+    const resetForm = useCallback(() => {
+        setTitle("");
+        setStartTime(null);
+        setEndTime(null);
+        setDescription("");
+        setSelectingStartTime(true);
+        setShowPicker(false);
+    }, []);
+
+    useEffect(() => {
+        if (task) {
+            setTitle(task.title);
+            setDescription(task.description);
+            setStartTime(parseTime(task.startTime));
+            setEndTime(parseTime(task.endTime));
+        } else {
+            resetForm();
+        }
+    }, [task, resetForm]);
+
+    useEffect(() => {
+        if (!modalVisible) {
+            resetForm();
+        }
+    }, [modalVisible, resetForm]);
+
+    useEffect(() => {
+        if (!selectingStartTime) {
+            setShowPicker(true);
+        }
+    }, [selectingStartTime]);
+
+    const handleTimeSelect = useCallback((event: DateTimePickerEvent, selectedDate?: Date) => {
         if (event.type === 'dismissed') {
-            if (selectingStartTime) {
-                setStartTime(null);
-            } else {
-                setEndTime(null);
-            }
             setShowPicker(false);
             setSelectingStartTime(true);
             return;
@@ -52,49 +98,43 @@ export default function AddModal({
             if (selectingStartTime) {
                 setStartTime(selectedDate);
                 setSelectingStartTime(false);
-                setShowPicker(true);
             } else {
+                if (startTime && selectedDate < startTime) {
+                    Alert.alert("Hata", "Bitiş zamanı başlangıç zamanından önce olamaz.");
+                    return;
+                }
                 setEndTime(selectedDate);
                 setShowPicker(false);
                 setSelectingStartTime(true);
             }
         }
-    };
-
-
-    const formattedTime = (date: Date | null): string =>
-        date ? date.toLocaleTimeString().slice(0, 5) : "-- : --";
+    }, [selectingStartTime, startTime]);
 
     const handleSave = () => {
-        if (!task.trim() || !startTime || !endTime || !description.trim()) {
-            alert("Lütfen tüm alanları eksiksiz doldurunuz.");
+        if (!title.trim() || !startTime || !endTime || !description.trim()) {
+            Alert.alert("Uyarı", "Lütfen tüm alanları eksiksiz doldurunuz.");
             return;
         }
+        if (!task) return;
 
-        dispatch(
-            TodoAdd({
-                id: Math.random().toString(36).substring(2, 10),
-                dayKey: dayKey,
-                title: task,
-                startTime: formattedTime(startTime),
-                endTime: formattedTime(endTime),
-                description: description,
-            })
-        );
+        dispatch(TodoUpdate({
+            id: task.id,
+            dayKey,
+            title,
+            startTime: formatTime(startTime),
+            endTime: formatTime(endTime),
+            description,
+        }));
 
-        // Alanları temizle
-        setTask("");
-        setStartTime(null);
-        setEndTime(null);
-        setDescription("");
         setModalVisible(false);
+        resetForm();
     };
 
     return (
         <Modal
             visible={modalVisible}
             animationType="slide"
-            transparent={true}
+            transparent
             onRequestClose={() => setModalVisible(false)}
         >
             <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
@@ -103,9 +143,10 @@ export default function AddModal({
                         <TextInput
                             style={styles.input}
                             placeholder="Görev Başlığı Giriniz"
-                            value={task}
-                            onChangeText={setTask}
+                            value={title}
+                            onChangeText={setTitle}
                             maxLength={20}
+                            autoFocus
                         />
 
                         <TouchableOpacity
@@ -113,15 +154,15 @@ export default function AddModal({
                             style={styles.input}
                         >
                             <Text style={{ fontSize: 16 }}>
-                                Görev Zaman {formattedTime(startTime)} {formattedTime(endTime)}
+                                Görev Zaman {formatTime(startTime)} - {formatTime(endTime)}
                             </Text>
                         </TouchableOpacity>
 
                         {showPicker && (
                             <DateTimePicker
-                                value={new Date()}
+                                value={selectingStartTime ? (startTime || new Date()) : (endTime || new Date())}
                                 mode="time"
-                                is24Hour={true}
+                                is24Hour
                                 display="spinner"
                                 onChange={handleTimeSelect}
                             />
@@ -130,7 +171,7 @@ export default function AddModal({
                         <TextInput
                             style={[styles.input, styles.textArea]}
                             placeholder="Açıklama giriniz"
-                            multiline={true}
+                            multiline
                             numberOfLines={4}
                             value={description}
                             onChangeText={setDescription}
@@ -145,7 +186,10 @@ export default function AddModal({
                                 <Text style={styles.buttonText}>Kapat</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.buttonSave} onPress={handleSave}>
+                            <TouchableOpacity
+                                style={styles.buttonSave}
+                                onPress={handleSave}
+                            >
                                 <Text style={styles.buttonText}>Kaydet</Text>
                             </TouchableOpacity>
                         </View>
@@ -155,7 +199,3 @@ export default function AddModal({
         </Modal>
     );
 }
-function alert(arg0: string) {
-    throw new Error("Function not implemented.");
-}
-

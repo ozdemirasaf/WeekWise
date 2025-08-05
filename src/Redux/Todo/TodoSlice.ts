@@ -28,10 +28,20 @@ export const TodoSlice = createSlice({
         },
         TodoRemove: (state, action: PayloadAction<string>) => {
             state.todos = state.todos.filter(state => state.id !== action.payload)
+        },
+        TodoUpdate: (state, action: PayloadAction<TodoItem>) => {
+            const index = state.todos.findIndex((index) => index.id === action.payload.id)
+
+            if (index !== -1) {
+                state.todos[index] = {
+                    ...state.todos[index],
+                    ...action.payload
+                }
+            }
         }
     },
 })
 
-export const { TodoAdd, TodoRemove } = TodoSlice.actions
+export const { TodoAdd, TodoRemove, TodoUpdate } = TodoSlice.actions
 
 export default TodoSlice.reducer
