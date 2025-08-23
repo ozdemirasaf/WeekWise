@@ -16,7 +16,8 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { useDispatch } from "react-redux";
 import { TodoUpdate } from "../../Redux/Todo/TodoSlice";
 
-import { TodoItem } from "../../Redux/Todo/TodoSlice";
+import { TodoItem } from '../../Redux/types/todo'
+
 
 interface EditModalProps {
     modalVisible: boolean;

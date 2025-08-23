@@ -110,8 +110,8 @@ export default function Navigation() {
                     name="Home"
                     component={Home}
                     options={{
-                        headerTitle: "Anasayfa",
-                        tabBarLabel: "Anasayfa",
+                        headerTitle: "Görevler",
+                        tabBarLabel: "Görevler",
                     }}
                 />
                 <Tab.Screen

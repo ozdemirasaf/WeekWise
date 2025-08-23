@@ -6,8 +6,8 @@ buildscript {
         targetSdkVersion = 35
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.1.20"
-     //   googlePlayServicesVersion = "17.0.0" // ekle
-       // firebaseMessagingVersion = "20.1.0"  // ekle
+      // googlePlayServicesVersion = "17.0.0" 
+       // firebaseMessagingVersion = "20.1.0"  
 
     }
     repositories {

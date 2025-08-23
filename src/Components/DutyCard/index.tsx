@@ -1,21 +1,36 @@
 import React from "react";
 import { Text, View, TouchableOpacity } from "react-native";
-import Feather from 'react-native-vector-icons/Feather';
+import Feather from "react-native-vector-icons/Feather";
 import styles from "./styles";
-import { TodoItem } from "../../Redux/Todo/TodoSlice";
+import { TodoItem } from '../../Redux/types/todo'
 
-interface DutyCardProps {
+
+interface BaseProps {
+    type: "tasks" | "weeks";
     task: TodoItem;
+}
+
+interface TasksProps extends BaseProps {
+    type: "tasks";
+    // tasks tipinde fonksiyonlar yok
+}
+
+interface WeeksProps extends BaseProps {
+    type: "weeks";
     isActive: boolean;
     onPress: () => void;
     onDelete: () => void;
-    onUpdate: () => void;  // Düzenleme fonksiyonu eklendi
+    onUpdate: () => void;
 }
 
-export default function DutyCard({ task, isActive, onPress, onDelete, onUpdate }: DutyCardProps) {
+type DutyCardProps = TasksProps | WeeksProps;
+
+export default function DutyCard(props: DutyCardProps) {
+    const { type, task } = props;
+
     return (
         <TouchableOpacity
-            onPress={onPress}
+            onPress={type === "weeks" ? props.onPress : undefined}
             style={styles.container}
             activeOpacity={0.8}
         >
@@ -32,18 +47,14 @@ export default function DutyCard({ task, isActive, onPress, onDelete, onUpdate }
                 <Text>{task.description}</Text>
             </View>
 
-            {isActive && (
+            {type === "weeks" && props.isActive && (
                 <View style={styles.actions}>
-                    <TouchableOpacity>
-                        <Feather name='check-square' size={24} />
+                    <TouchableOpacity onPress={props.onDelete}>
+                        <Feather name="trash" size={24} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={onUpdate}>
-                        <Feather name='edit' size={24} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={onDelete}>
-                        <Feather name='trash' size={24} />
+                    <TouchableOpacity onPress={props.onUpdate}>
+                        <Feather name="edit" size={24} />
                     </TouchableOpacity>
                 </View>
             )}

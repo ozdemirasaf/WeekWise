@@ -1,22 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-
-export interface TodoItem {
-    id: string;
-    dayKey: string;
-    title: string;
-    startTime: string;
-    endTime: string;
-    description: string;
-}
+import { TodoItem } from '../types/todo'
 
 
 interface TodoState {
-    todos: TodoItem[]
+    todos: TodoItem[],
+    hiddenTaskIds: string[]
 }
 
 const initialState: TodoState = {
-    todos: []
+    todos: [],
+    hiddenTaskIds: []
 }
 
 export const TodoSlice = createSlice({
@@ -38,10 +32,18 @@ export const TodoSlice = createSlice({
                     ...action.payload
                 }
             }
+        },
+        TodoHide: (state, action: PayloadAction<string>) => {
+            if (!state.hiddenTaskIds.includes(action.payload)) {
+                state.hiddenTaskIds.push(action.payload)
+            }
+        },
+        TodoUnhide: (state, action: PayloadAction<string>) => {
+            state.hiddenTaskIds = state.hiddenTaskIds.filter(id => id !== action.payload)
         }
     },
 })
 
-export const { TodoAdd, TodoRemove, TodoUpdate } = TodoSlice.actions
+export const { TodoAdd, TodoRemove, TodoUpdate, TodoHide, TodoUnhide } = TodoSlice.actions
 
 export default TodoSlice.reducer
